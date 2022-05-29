@@ -14,11 +14,12 @@ from dotenv import load_dotenv
 
 
 NEW_QUESTION = 0
+ANSWER = 1
 
 
 def start(update: Update, context: CallbackContext):
-    custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счет']]
-    keyboard = ReplyKeyboardMarkup(custom_keyboard)
+    question_keyboard = [['Новый вопрос'], ['Мой счет']]
+    keyboard = ReplyKeyboardMarkup(question_keyboard)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text='Привет! Я бот для викторин',
@@ -28,22 +29,23 @@ def start(update: Update, context: CallbackContext):
 
 
 def handle_new_question_request(update: Update, context: CallbackContext):
-    print('question')
+    answer_keyboard = [['Сдаться'], ['Мой счет']]
+    keyboard = ReplyKeyboardMarkup(answer_keyboard)
     question = random.choice(
         list(context.bot_data.get('questions', {}).values())
     )
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=question.get('вопрос')
+        text=question.get('вопрос'),
+        reply_markup=keyboard
     )
     context.chat_data['answer'] = question.get('ответ').split('.')[0]
     print('Вопрос:\n{}'.format(question.get('вопрос')))
     print('Ответ:\n{}'.format(question.get('ответ')))
-    return NEW_QUESTION
+    return ANSWER
 
 
 def handle_solution_attempt(update: Update, context: CallbackContext):
-    print('answer')
     answer = context.chat_data.get('answer')
     if answer:
         if update.message.text.lower() == answer.lower():
@@ -60,6 +62,19 @@ def handle_solution_attempt(update: Update, context: CallbackContext):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text='Прежде чем отвечать, получите вопрос'
+        )
+    return ANSWER
+
+
+def rejected_question(update: Update, context: CallbackContext):
+    answer = context.chat_data.get('answer')
+    question_keyboard = [['Новый вопрос'], ['Мой счет']]
+    keyboard = ReplyKeyboardMarkup(question_keyboard)
+    if answer:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text='Правильный ответ\n{}'.format(answer),
+            reply_markup=keyboard
         )
     return NEW_QUESTION
 
@@ -92,12 +107,18 @@ def main():
         states={
             NEW_QUESTION: [
                 MessageHandler(
-                    (Filters.text(['Новый вопрос']) & (~Filters.command)),
+                    (Filters.text(['Новый вопрос'])),
                     handle_new_question_request
+                )
+            ],
+            ANSWER: [
+                MessageHandler(
+                    (Filters.text & (~Filters.text(['Сдаться'])) & (~Filters.command)),
+                    handle_solution_attempt
                 ),
                 MessageHandler(
-                    (Filters.text & (~Filters.text(['Новый вопрос'])) & (~Filters.command)),
-                    handle_solution_attempt
+                    (Filters.text(['Сдаться'])),
+                    rejected_question
                 )
             ]
         },
