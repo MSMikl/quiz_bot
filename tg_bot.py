@@ -2,7 +2,6 @@ import json
 import os
 import random
 
-import redis
 
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
