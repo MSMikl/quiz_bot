@@ -28,6 +28,15 @@ def start(update: Update, context: CallbackContext):
     return NEW_QUESTION
 
 
+def current_count(update: Update, context: CallbackContext):
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text='Ваш текущий счет {} баллов'.format(
+            context.chat_data.get('count', 0)
+        )
+    )
+
+
 def handle_new_question_request(update: Update, context: CallbackContext):
     answer_keyboard = [['Сдаться'], ['Мой счет']]
     keyboard = ReplyKeyboardMarkup(answer_keyboard)
@@ -49,10 +58,15 @@ def handle_solution_attempt(update: Update, context: CallbackContext):
     answer = context.chat_data.get('answer')
     if answer:
         if update.message.text.lower() == answer.lower():
+            question_keyboard = [['Новый вопрос'], ['Мой счет']]
+            keyboard = ReplyKeyboardMarkup(question_keyboard)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text='Верно!'
+                text='Верно!',
+                reply_markup=keyboard
             )
+            context.chat_data['count'] = context.chat_data.get('count', 0) + 1
+            return NEW_QUESTION
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -107,14 +121,26 @@ def main():
         states={
             NEW_QUESTION: [
                 MessageHandler(
-                    (Filters.text(['Новый вопрос'])),
+                    Filters.text(['Новый вопрос']),
                     handle_new_question_request
+                ),
+                MessageHandler(
+                    Filters.text(['Мой счет']),
+                    current_count
                 )
             ],
             ANSWER: [
                 MessageHandler(
-                    (Filters.text & (~Filters.text(['Сдаться'])) & (~Filters.command)),
+                    (
+                        Filters.text &
+                        (~Filters.text(['Сдаться', 'Мой счет']))
+                        & (~Filters.command)
+                    ),
                     handle_solution_attempt
+                ),
+                MessageHandler(
+                    Filters.text(['Мой счет']),
+                    current_count
                 ),
                 MessageHandler(
                     (Filters.text(['Сдаться'])),
