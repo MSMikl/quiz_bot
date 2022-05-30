@@ -98,9 +98,8 @@ def main():
     updater = Updater(token=tg_token)
     dispatcher = updater.dispatcher
     with open(
-        os.path.join(os.path.curdir, 'questions', 'questions.json'),
-        'r',
-        encoding='KOI8-R'
+        os.path.join(os.path.curdir, 'questions.json'),
+        'r'
     ) as file:
         questions = json.load(file)
     dispatcher.bot_data['questions'] = questions

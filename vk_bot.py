@@ -90,7 +90,7 @@ def main():
     redis_host = os.getenv('REDIS_HOST')
     redis_port = int(os.getenv('REDIS_PORT'))
     with open(
-        os.path.join(os.path.curdir, 'questions', 'questions.json'),
+        os.path.join(os.path.curdir, 'questions.json'),
         'r'
     ) as file:
         questions = json.load(file)
