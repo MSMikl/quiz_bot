@@ -95,7 +95,6 @@ def rejected_question(update: Update, context: CallbackContext):
 def main():
     load_dotenv()
     tg_token = os.getenv('TG_TOKEN')
-    redis_pass = os.getenv('REDIS_PASS')
     updater = Updater(token=tg_token)
     dispatcher = updater.dispatcher
     with open(
@@ -105,15 +104,7 @@ def main():
     ) as file:
         questions = json.load(file)
     dispatcher.bot_data['questions'] = questions
-    db = redis.Redis(
-        host='redis-19730.c279.us-central1-1.gce.cloud.redislabs.com',
-        port=19730,
-        password=redis_pass,
-        db=0
-    )
-    dispatcher.bot_data['db'] = db
     print('Бот запущен')
-
     start_handler = CommandHandler('start', start)
 
     conversation = ConversationHandler(
