@@ -100,7 +100,8 @@ def main():
     dispatcher = updater.dispatcher
     with open(
         os.path.join(os.path.curdir, 'questions', 'questions.json'),
-        'r'
+        'r',
+        encoding='KOI8-R'
     ) as file:
         questions = json.load(file)
     dispatcher.bot_data['questions'] = questions
