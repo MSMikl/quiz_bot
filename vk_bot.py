@@ -83,6 +83,15 @@ def fetch_count(event, vk_api, count):
     )
 
 
+def redis_get(db, key, default=None):
+    result = db.get(key)
+    print(result)
+    if result:
+        return int(result)
+    else:
+        return default
+
+
 def main():
     load_dotenv()
     vk_token = os.getenv('VK_TOKEN')
@@ -95,58 +104,49 @@ def main():
     ) as file:
         questions = json.load(file)
 
-    # База Redis с ответом на текущий вопрос
-    answer_db = redis.Redis(
+    db = redis.Redis(
         host=redis_host,
         port=redis_port,
         password=redis_pass,
         db=0
     )
 
-    # База Redis со счетом
-    count_db = redis.Redis(
-        host=redis_host,
-        port=redis_port,
-        password=redis_pass,
-        db=1
-    )
     vk_session = vk.VkApi(token=vk_token)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
+
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
             if event.text == 'Начать':
                 start(event, vk_api)
             elif event.text == 'Новый вопрос':
                 question = random.choice(list(questions.values()))
-                answer_db.set(
-                    event.user_id,
-                    json.dumps(question.get('ответ'))
+                db.set(
+                    str(event.user_id) + '_answer',
+                    json.dumps(question.get('ответ').replace('.', ''))
                 )
                 ask_question(event, vk_api, question.get('вопрос'))
             elif event.text == 'Сдаться':
-                try:
-                    answer = answer_db.get(event.user_id)
-                except redis.exceptions.ResponseError:
+                answer = db.get(str(event.user_id) + '_answer')
+                if not answer:
                     continue
                 retire(event, vk_api, json.loads(answer))
+                db.delete(str(event.user_id) + '_answer')
             elif event.text == 'Мой счет':
-                try:
-                    count = count_db.get(event.user_id)
-                except redis.exceptions.ResponseError:
-                    count = 0
-                fetch_count(event, vk_api, count)
+                fetch_count(
+                    event,
+                    vk_api,
+                    redis_get(db, str(event.user_id) + '_score', 0)
+                )
             elif event.text:
-                try:
-                    answer = answer_db.get(event.user_id)
-                except redis.exceptions.ResponseError:
+                answer = db.get(str(event.user_id) + '_answer')
+                if not answer:
                     continue
                 if answer_attempt(event, vk_api, json.loads(answer)):
-                    try:
-                        count = count_db.get(event.user_id)
-                    except redis.exceptions.ResponseError:
-                        count = 0
-                    count_db.set(event.user_id, count + 1)
+                    db.set(
+                        str(event.user_id) + '_score',
+                        redis_get(db, str(event.user_id) + '_score', 0) + 1
+                    )
 
 
 if __name__ == '__main__':
