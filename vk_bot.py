@@ -83,15 +83,6 @@ def fetch_count(event, vk_api, count):
     )
 
 
-def redis_get(db, key, default=None):
-    result = db.get(key)
-    print(result)
-    if result:
-        return int(result)
-    else:
-        return default
-
-
 def main():
     load_dotenv()
     vk_token = os.getenv('VK_TOKEN')
@@ -122,30 +113,30 @@ def main():
             elif event.text == 'Новый вопрос':
                 question = random.choice(list(questions.values()))
                 db.set(
-                    str(event.user_id) + '_answer',
+                    f'{event.user_id}_answer',
                     json.dumps(question.get('ответ').replace('.', ''))
                 )
                 ask_question(event, vk_api, question.get('вопрос'))
             elif event.text == 'Сдаться':
-                answer = db.get(str(event.user_id) + '_answer')
+                answer = db.get(f'{event.user_id}_answer')
                 if not answer:
                     continue
                 retire(event, vk_api, json.loads(answer))
-                db.delete(str(event.user_id) + '_answer')
+                db.delete(f'{event.user_id}_answer')
             elif event.text == 'Мой счет':
                 fetch_count(
                     event,
                     vk_api,
-                    redis_get(db, str(event.user_id) + '_score', 0)
+                    db.get(f'{event.user_id}_score') or 0
                 )
             elif event.text:
-                answer = db.get(str(event.user_id) + '_answer')
+                answer = db.get(f'{event.user_id}_answer')
                 if not answer:
                     continue
                 if answer_attempt(event, vk_api, json.loads(answer)):
                     db.set(
-                        str(event.user_id) + '_score',
-                        redis_get(db, str(event.user_id) + '_score', 0) + 1
+                        f'{event.user_id}_score',
+                        (db.get(f'{event.user_id}_score') or 0) + 1
                     )
 
 
