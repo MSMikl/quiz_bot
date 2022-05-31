@@ -48,8 +48,6 @@ def handle_new_question_request(update: Update, context: CallbackContext):
         reply_markup=keyboard
     )
     context.chat_data['answer'] = question.get('ответ').split('.')[0]
-    print('Вопрос:\n{}'.format(question.get('вопрос')))
-    print('Ответ:\n{}'.format(question.get('ответ')))
     return ANSWER
 
 
@@ -103,7 +101,6 @@ def main():
     ) as file:
         questions = json.load(file)
     dispatcher.bot_data['questions'] = questions
-    print('Бот запущен')
     start_handler = CommandHandler('start', start)
 
     conversation = ConversationHandler(
