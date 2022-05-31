@@ -1,8 +1,6 @@
 import json
 import os
 
-files_index = []
-
 
 def question_read(file):
     question = {}
@@ -15,6 +13,9 @@ def question_read(file):
 
 
 def main():
+
+    files_index = []
+
     with open(
         os.path.join(os.path.curdir, 'questions', 'index'),
         'r',
@@ -41,6 +42,7 @@ def main():
         encoding='KOI8-R'
     ) as file:
         json.dump(questions, file, indent=4)
+
 
 if __name__ == '__main__':
     main()
