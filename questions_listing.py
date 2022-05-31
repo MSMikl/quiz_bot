@@ -14,31 +14,33 @@ def question_read(file):
     return question
 
 
-with open(
-    os.path.join(os.path.curdir, 'questions', 'index'),
-    'r',
-    encoding="KOI8-R"
-) as file:
-    for line in file:
-        filename = line.split()[0]
-        if len (filename.split('.')) > 1:
-            files_index.append(filename)
-
-print(files_index)
-
-questions = {}
-
-for filename in files_index:
+def main():
     with open(
-        os.path.join(os.path.curdir, 'questions', filename),
+        os.path.join(os.path.curdir, 'questions', 'index'),
         'r',
+        encoding="KOI8-R"
+    ) as file:
+        for line in file:
+            filename = line.split()[0]
+            if len(filename.split('.')) > 1:
+                files_index.append(filename)
+
+    questions = {}
+
+    for filename in files_index:
+        with open(
+            os.path.join(os.path.curdir, 'questions', filename),
+            'r',
+            encoding='KOI8-R'
+        ) as file:
+            questions[filename] = question_read(file)
+
+    with open(
+        os.path.join(os.path.curdir, 'questions', 'questions.json'),
+        'w',
         encoding='KOI8-R'
     ) as file:
-        questions[filename] = question_read(file)
+        json.dump(questions, file, indent=4)
 
-with open(
-    os.path.join(os.path.curdir, 'questions', 'questions.json'),
-    'w',
-    encoding='KOI8-R'
-) as file:
-    json.dump(questions, file, indent=4)
+if __name__ == '__main__':
+    main()
